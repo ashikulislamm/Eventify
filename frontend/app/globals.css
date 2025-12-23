@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Custom Color Palette */
+  --color-primary: #11224E;
+  --color-secondary: #e7f8f2;
+  --color-accent: #76153C;
+  --color-lightBG: #f6f6f8;
+}
+
+body {
+  
+}
