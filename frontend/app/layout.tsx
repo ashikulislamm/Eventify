@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Montserrat, Saira } from "next/font/google";
 import Header from "../components/layout/Header";
+import Footer from "@/components/layout/Footer";
 import "./globals.css";
 
 
@@ -20,11 +21,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={ `${montserrat.className} bg-lightBG min-h-screen` }
+        className={ `${montserrat.className} bg-white min-h-screen` }
         suppressHydrationWarning
       >
         <Header />
         {children}
+        <Footer />
+
       </body>
     </html>
   );

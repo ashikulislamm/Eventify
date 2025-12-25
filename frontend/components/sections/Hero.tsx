@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export default function Hero() {
   return (
-    <div className="bg-primary/5 mx-auto relative">
+    <div className="mx-auto relative">
       <section className="w-full px-4 md:px-10 py-12 md:py-20 max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-12 items-center">
           {/* Hero Content */}

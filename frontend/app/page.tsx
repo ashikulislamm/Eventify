@@ -1,5 +1,6 @@
 import Hero from "@/components/sections/Hero";
 import HowItWorks from "@/components/sections/HowItWorks";
+import LatestEvents from "@/components/sections/LatestEvents";
 import Footer from "@/components/layout/Footer";
 
 export default function Home() {
@@ -7,7 +8,8 @@ export default function Home() {
     <div className="min-h-screen">
       <Hero />
       <HowItWorks />
-      <Footer />
+      <LatestEvents />
+
     </div>
   );
 }
