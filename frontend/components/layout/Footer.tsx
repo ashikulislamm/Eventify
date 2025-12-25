@@ -8,15 +8,16 @@ const footerLinks = {
     { label: "Calendar", href: "#" },
   ],
   resources: [
-    { label: "Help Center", href: "#" },
+    { label: "Club Login", href: "/club/login" },
+    { label: "Register Club", href: "/club/signup" },
     { label: "Student Handbook", href: "#" },
-    { label: "Event Guidelines", href: "#" },
     { label: "Contact Support", href: "#" },
   ],
   legal: [
     { label: "Privacy Policy", href: "#" },
     { label: "Terms of Service", href: "#" },
     { label: "Cookie Policy", href: "#" },
+    { label: "Event Guidelines", href: "#" },
   ],
 };
 
@@ -111,7 +112,7 @@ export default function Footer() {
         {/* Bottom Section */}
         <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-gray-600">
-            © 2024 Eventify Inc. All rights reserved.
+            © 2026 Eventify Inc. All rights reserved.
           </p>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
