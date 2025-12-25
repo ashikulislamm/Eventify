@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
+import Logo from "../../public/Logo.png";
 
 const navLinks = [
   { text: "Browse Events", href: "/events" },
@@ -38,12 +40,19 @@ export default function Header() {
       >
         <div className="container mx-auto flex items-center justify-between lg:relative">
           {/* Logo - Left on Mobile, Center on Desktop */}
-          <div className="lg:absolute lg:left-1/2 lg:transform lg:-translate-x-1/2">
+          <div className="lg:absolute lg:left-1/2 lg:transform lg:-translate-x-1/2 ">
             <Link
               href="/"
-              className="text-lg md:text-xl xl:text-2xl font-bold tracking-wider text-accent"
+              className="flex items-center"
             >
-              EVENTIFY
+              <Image
+                src={Logo}
+                alt="Eventify Logo"
+                width={isScrolled ? 100 : 120}
+                height={isScrolled ? 60 : 80}
+                className="transition-all duration-500 p-2"
+                priority
+              />
             </Link>
           </div>
 
