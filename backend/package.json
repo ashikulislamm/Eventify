@@ -5,24 +5,34 @@
   "author": "",
   "description": "",
   "scripts": {
+    "dev": "nodemon --exec ts-node src/server.ts",
     "build": "tsc",
     "start": "tsx watch src/server.ts",
-    "start:prod": "node dist/server.js"
+    "start:prod": "node dist/server.js",
+    "db:migrate": "tsx database/migrate.ts",
+    "db:reset": "tsx database/migrate.ts"
   },
   "keywords": [],
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "^7.2.0",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-error-toolkit": "^1.2.1",
-    "http-status-toolkit": "^2.0.0"
+    "http-status-toolkit": "^2.0.0",
+    "postgres": "^3.4.7",
+    "prisma": "^7.2.0"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
-    "@types/node": "^24.2.1",
+    "@types/node": "^24.10.4",
+    "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   }
 }

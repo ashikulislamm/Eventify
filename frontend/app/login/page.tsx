@@ -1,34 +1,91 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { HiOutlineMail, HiOutlineLockClosed, HiOutlineEye, HiOutlineEyeOff } from 'react-icons/hi';
-import { FaGoogle, FaGithub } from 'react-icons/fa';
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import Image from "next/image";
+import {
+  HiOutlineMail,
+  HiOutlineLockClosed,
+  HiOutlineEye,
+  HiOutlineEyeOff,
+  HiCheckCircle,
+  HiXCircle,
+} from "react-icons/hi";
+import { FaGoogle, FaGithub } from "react-icons/fa";
 
 const socialLogins = [
-  { icon: FaGoogle, name: "Google", color: "bg-white hover:bg-gray-50 border-gray-200" },
-  { icon: FaGithub, name: "GitHub", color: "bg-gray-900 text-white hover:bg-gray-800 border-gray-900" }
+  {
+    icon: FaGoogle,
+    name: "Google",
+    color: "bg-white hover:bg-gray-50 border-gray-200",
+  },
+  {
+    icon: FaGithub,
+    name: "GitHub",
+    color: "bg-gray-900 text-white hover:bg-gray-800 border-gray-900",
+  },
 ];
 
 export default function LoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt:', formData);
-    // Handle login logic
+    setError("");
+    setSuccess(false);
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        {
+          email: formData.email,
+          password: formData.password,
+        }
+      );
+
+      if (response.data.success) {
+        setSuccess(true);
+
+        // Store user data in localStorage
+        const userData = response.data.data;
+        localStorage.setItem("user", JSON.stringify(userData));
+
+        // Create username for URL (lowercase, no spaces)
+        const urlUsername = userData.name.toLowerCase().replace(/\s+/g, "");
+
+        // Show success message for 1 second then redirect to dashboard
+        setTimeout(() => {
+          router.push(`/user/${urlUsername}`);
+        }, 1000);
+      }
+    } catch (err: any) {
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("Login failed. Please try again.");
+      }
+      console.error("Login error:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -44,12 +101,40 @@ export default function LoginPage() {
                 EVENTIFY
               </h1>
             </Link>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome back</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Welcome back
+            </h2>
             <p className="text-gray-500">Please login to your account</p>
           </div>
 
           {/* Login Card */}
           <div className="space-y-6">
+            {/* Success Message */}
+            {success && (
+              <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 flex items-start gap-3">
+                <HiCheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-green-900">
+                    Login Successful!
+                  </h3>
+                  <p className="text-sm text-green-700 mt-1">
+                    Redirecting to dashboard...
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-start gap-3">
+                <HiXCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-red-900">Login Failed</h3>
+                  <p className="text-sm text-red-700 mt-1">{error}</p>
+                </div>
+              </div>
+            )}
+
             {/* Social Login */}
             <div className="grid grid-cols-2 gap-3">
               {socialLogins.map((social, index) => {
@@ -72,7 +157,9 @@ export default function LoginPage() {
                 <div className="w-full border-t border-gray-200"></div>
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="px-2 bg-white text-gray-500 font-medium">Or continue with</span>
+                <span className="px-2 bg-white text-gray-500 font-medium">
+                  Or continue with
+                </span>
               </div>
             </div>
 
@@ -80,7 +167,10 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
                   Email Address
                 </label>
                 <div className="relative">
@@ -102,7 +192,10 @@ export default function LoginPage() {
 
               {/* Password Field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
                   Password
                 </label>
                 <div className="relative">
@@ -142,9 +235,14 @@ export default function LoginPage() {
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="w-4 h-4 rounded border-2 border-gray-300 text-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
                   />
-                  <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-900 transition-colors">Remember me</span>
+                  <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
+                    Remember me
+                  </span>
                 </label>
-                <Link href="/forgot-password" className="text-sm font-semibold text-primary hover:text-accent transition-colors">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-semibold text-primary hover:text-accent transition-colors"
+                >
                   Forgot password?
                 </Link>
               </div>
@@ -152,16 +250,44 @@ export default function LoginPage() {
               {/* Login Button */}
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-primary to-accent text-white py-4 rounded-xl font-bold hover:shadow-lg hover:shadow-primary/30 transition-all transform hover:-translate-y-0.5"
+                disabled={isLoading || success}
+                className="w-full bg-gradient-to-r from-primary to-accent text-white py-4 rounded-xl font-bold hover:shadow-lg hover:shadow-primary/30 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                Sign In
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Signing In...
+                  </span>
+                ) : success ? (
+                  "Success!"
+                ) : (
+                  "Sign In"
+                )}
               </button>
             </form>
 
             {/* Sign Up Link */}
             <p className="text-center text-sm text-gray-600">
-              Don't have an account?{' '}
-              <Link href="/signup" className="font-bold text-primary hover:text-accent transition-colors">
+              Don't have an account?{" "}
+              <Link
+                href="/signup"
+                className="font-bold text-primary hover:text-accent transition-colors"
+              >
                 Sign up for free
               </Link>
             </p>
@@ -169,10 +295,20 @@ export default function LoginPage() {
 
           {/* Terms & Privacy */}
           <p className="text-center text-xs text-gray-400 pt-4">
-            By continuing, you agree to our{' '}
-            <Link href="/terms" className="underline hover:text-gray-600 transition-colors">Terms</Link>
-            {' '}and{' '}
-            <Link href="/privacy" className="underline hover:text-gray-600 transition-colors">Privacy Policy</Link>
+            By continuing, you agree to our{" "}
+            <Link
+              href="/terms"
+              className="underline hover:text-gray-600 transition-colors"
+            >
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/privacy"
+              className="underline hover:text-gray-600 transition-colors"
+            >
+              Privacy Policy
+            </Link>
           </p>
         </div>
       </div>
@@ -181,17 +317,23 @@ export default function LoginPage() {
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-primary via-accent to-primary items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
         <div className="relative z-10 max-w-lg text-white">
-          <h2 className="text-4xl font-black mb-6">Join thousands of event organizers</h2>
+          <h2 className="text-4xl font-black mb-6">
+            Join thousands of event organizers
+          </h2>
           <p className="text-lg text-white/90 mb-8">
-            Manage your university events seamlessly. Connect with students, track attendance, and create memorable experiences.
+            Manage your university events seamlessly. Connect with students,
+            track attendance, and create memorable experiences.
           </p>
           <div className="space-y-4">
             {[
               { number: "10K+", label: "Active Events" },
               { number: "50K+", label: "Students Connected" },
-              { number: "100+", label: "Universities" }
+              { number: "100+", label: "Universities" },
             ].map((stat, index) => (
-              <div key={index} className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div
+                key={index}
+                className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-xl p-4"
+              >
                 <div className="text-3xl font-black">{stat.number}</div>
                 <div className="text-sm text-white/80">{stat.label}</div>
               </div>

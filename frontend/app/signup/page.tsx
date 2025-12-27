@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 import {
   HiOutlineMail,
   HiOutlineLockClosed,
@@ -12,6 +14,8 @@ import {
   HiOutlineLocationMarker,
   HiOutlineAcademicCap,
   HiOutlineBriefcase,
+  HiCheckCircle,
+  HiXCircle,
 } from "react-icons/hi";
 import { FaGoogle, FaGithub } from "react-icons/fa";
 
@@ -29,6 +33,7 @@ const socialSignups = [
 ];
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -42,15 +47,62 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setSuccess(false);
+
+    // Client-side validation
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      setError("Passwords do not match!");
       return;
     }
-    console.log("Signup attempt:", formData);
-    // Handle signup logic
+
+    if (!agreeToTerms) {
+      setError("Please agree to the Terms of Service and Privacy Policy");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/users/register",
+        {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          university: formData.university,
+          department: formData.department,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+        }
+      );
+
+      if (response.data.success) {
+        setSuccess(true);
+        setError("");
+
+        // Show success message for 2 seconds then redirect
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000);
+      }
+    } catch (err: any) {
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("Registration failed. Please try again.");
+      }
+      console.error("Registration error:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,6 +134,34 @@ export default function SignUpPage() {
 
           {/* Signup Card */}
           <div className="space-y-6">
+            {/* Success Message */}
+            {success && (
+              <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 flex items-start gap-3">
+                <HiCheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-green-900">
+                    Registration Successful!
+                  </h3>
+                  <p className="text-sm text-green-700 mt-1">
+                    Your account has been created. Redirecting to login...
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-start gap-3">
+                <HiXCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-red-900">
+                    Registration Failed
+                  </h3>
+                  <p className="text-sm text-red-700 mt-1">{error}</p>
+                </div>
+              </div>
+            )}
+
             {/* Social Signup */}
             <div className="grid grid-cols-2 gap-3">
               {socialSignups.map((social, index) => {
@@ -344,9 +424,34 @@ export default function SignUpPage() {
                   type="checkbox"
                   checked={agreeToTerms}
                   onChange={(e) => setAgreeToTerms(e.target.checked)}
-                  required
-                  className="w-4 h-4 mt-1 rounded border-2 border-gray-300 text-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                  disabled={isLoading || success}
+                  className="w-full bg-gradient-to-r from-primary to-accent text-white py-4 rounded-xl font-bold hover:shadow-lg hover:shadow-primary/30 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 />
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Creating Account...
+                  </span>
+                ) : success ? (
+                  "Account Created!"
+                ) : (
+                  "Create Account"
+                )}
                 <label className="ml-2 text-sm text-gray-600">
                   I agree to the{" "}
                   <Link

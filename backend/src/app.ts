@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { notFoundHandler, globalErrorHandler } from 'express-error-toolkit';
 import { StatusCodes } from 'http-status-toolkit';
+import routes from './app/routes';
 
 const app = express();
 
@@ -17,6 +18,9 @@ app.get('/', (_req: Request, res: Response) => {
     message: 'Server is running',
   });
 });
+
+// API routes
+app.use('/api', routes);
 
 // not found handler and global error handler
 app.use(notFoundHandler);

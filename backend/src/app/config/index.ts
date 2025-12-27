@@ -1,3 +1,5 @@
+import sql, { testConnection } from "./db";
+
 interface Config {
   port: number;
   dbUrl?: string;
@@ -10,4 +12,5 @@ const config: Config = {
   jwtSecret: process.env.JWT_SECRET,
 };
 
+export { sql, testConnection };
 export default config;

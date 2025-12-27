@@ -3,6 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { HiOutlineUser, HiOutlineLogout, HiChevronDown } from "react-icons/hi";
 import Logo from "../../public/Logo.png";
 
 const navLinks = [
@@ -13,8 +15,11 @@ const navLinks = [
 ];
 
 export default function Header() {
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -24,6 +29,21 @@ export default function Header() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    setIsUserMenuOpen(false);
+    router.push("/");
+  };
 
   return (
     <div
@@ -41,10 +61,7 @@ export default function Header() {
         <div className="container mx-auto flex items-center justify-between lg:relative">
           {/* Logo - Left on Mobile, Center on Desktop */}
           <div className="lg:absolute lg:left-1/2 lg:transform lg:-translate-x-1/2 ">
-            <Link
-              href="/"
-              className="flex items-center"
-            >
+            <Link href="/" className="flex items-center">
               <Image
                 src={Logo}
                 alt="Eventify Logo"
@@ -71,24 +88,64 @@ export default function Header() {
 
           {/* Right Navigation - Desktop Only */}
           <div className="hidden lg:flex items-center gap-2 xl:gap-3">
-            <Link
-              href="/login"
-              className="bg-primary rounded-full text-white px-4 xl:px-6 py-2 text-xs xl:text-sm hover:opacity-80 transition-opacity"
-            >
-              Login
-            </Link>
-            <Link
-              href="/signup"
-              className="bg-accent text-white px-4 xl:px-6 py-2 rounded-full text-xs xl:text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
-            >
-              Sign Up
-            </Link>
+            {!user ? (
+              <>
+                <Link
+                  href="/login"
+                  className="bg-primary rounded-lg text-white px-4 xl:px-6 py-2 text-xs xl:text-sm hover:opacity-80 transition-opacity"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/signup"
+                  className="bg-accent text-white px-4 xl:px-6 py-2 rounded-lg text-xs xl:text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
+                >
+                  Sign Up
+                </Link>
+              </>
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 bg-primary text-white px-4 xl:px-6 py-2.5 rounded-lg text-xs xl:text-sm font-medium hover:opacity-90 transition-opacity"
+                >
+                  <HiOutlineUser className="w-5 h-5" />
+                  <span className="whitespace-nowrap">{user.name}</span>
+                  <HiChevronDown
+                    className={`w-4 h-4 transition-transform ${
+                      isUserMenuOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {/* User Dropdown Menu */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-100">
+                    <Link
+                      href={`/user/${user.name.toLowerCase().replace(/\s+/g, "")}`}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <HiOutlineUser className="w-4 h-4" />
+                      My Dashboard
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <HiOutlineLogout className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button - Right Side */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="lg:hidden flex flex-col gap-1.5 w-6 h-6 justify-center ml-auto text-accent font-medium"
+            className="lg:hidden flex flex-col gap-1.5 w-8 h-8 justify-center items-center focus:outline-none"
             aria-label="Toggle menu"
           >
             <span
@@ -124,20 +181,48 @@ export default function Header() {
             </Link>
           ))}
           <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-gray-200">
-            <Link
-              href="/login"
-              className="bg-primary text-white px-4 py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity text-center"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Login
-            </Link>
-            <Link
-              href="/signup"
-              className="bg-accent text-white px-4 py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity text-center"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Sign Up
-            </Link>
+            {!user ? (
+              <>
+                <Link
+                  href="/login"
+                  className="bg-primary text-white px-4 py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity text-center"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/signup"
+                  className="bg-accent text-white px-4 py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity text-center"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
+            ) : (
+              <>
+                <div className="px-2 py-2 text-sm font-semibold text-gray-700 border-b border-gray-200">
+                  {user.name}
+                </div>
+                <Link
+                  href={`/user/${user.name.toLowerCase().replace(/\s+/g, "")}`}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors rounded-lg"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <HiOutlineUser className="w-4 h-4" />
+                  My Dashboard
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors rounded-lg text-left"
+                >
+                  <HiOutlineLogout className="w-4 h-4" />
+                  Logout
+                </button>
+              </>
+            )}
           </div>
         </nav>
       )}
