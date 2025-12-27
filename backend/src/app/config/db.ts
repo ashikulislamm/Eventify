@@ -16,7 +16,7 @@ const sql = postgres(dbUrl, {
   max: 10, // Maximum number of connections in the pool
   idle_timeout: 20, // Close idle connections after 20 seconds
   connect_timeout: 30, // Connection timeout in seconds (increased for network latency)
-  ssl: 'require', // Required for Supabase
+  ssl: "require", // Required for Supabase
   transform: {
     undefined: null,
   },
@@ -26,10 +26,15 @@ const sql = postgres(dbUrl, {
 export const testConnection = async () => {
   try {
     console.log("🔄 Attempting to connect to database...");
-    const result = await sql`SELECT NOW() as current_time, version() as db_version`;
+    const result =
+      await sql`SELECT NOW() as current_time, version() as db_version`;
     console.log("✅ Database connected successfully!");
     console.log("📅 Server time:", result[0].current_time);
-    console.log("🗄️  PostgreSQL version:", result[0].db_version.split(' ')[0], result[0].db_version.split(' ')[1]);
+    console.log(
+      "🗄️  PostgreSQL version:",
+      result[0].db_version.split(" ")[0],
+      result[0].db_version.split(" ")[1]
+    );
     return true;
   } catch (error: any) {
     console.error("❌ Database connection failed!");
@@ -39,7 +44,9 @@ export const testConnection = async () => {
     console.error("2. Verify Supabase project is active and not paused");
     console.error("3. Confirm DB_URL in .env file is correct");
     console.error("4. Check if firewall is blocking the connection");
-    console.error("5. Try accessing your Supabase dashboard to verify the project status\n");
+    console.error(
+      "5. Try accessing your Supabase dashboard to verify the project status\n"
+    );
     return false;
   }
 };
