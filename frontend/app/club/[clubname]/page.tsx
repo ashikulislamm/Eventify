@@ -7,7 +7,7 @@ import {
   HiOutlineCalendar,
   HiOutlineStar,
   HiOutlineTicket,
-  HiOutlineUser,
+  HiOutlineUserGroup,
   HiOutlineMail,
   HiOutlinePhone,
   HiOutlineLocationMarker,
@@ -16,23 +16,28 @@ import {
   HiX,
   HiCheckCircle,
   HiExclamationCircle,
+  HiOutlineGlobe,
+  HiOutlineUsers,
+  HiOutlineChartBar,
   HiOutlineLogout,
   HiOutlineCog,
   HiOutlineHome,
 } from "react-icons/hi";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 
-interface User {
+interface Club {
   id: string;
-  name: string;
+  club_name: string;
   email: string;
   phone: string;
-  address: string;
   university: string;
-  department: string;
-  role: string;
-  avatar?: string;
-  bio?: string;
+  description: string;
+  president_name: string;
+  president_email: string;
+  logo?: string;
+  website?: string;
+  address?: string;
+  is_verified: boolean;
 }
 
 interface Toast {
@@ -41,48 +46,49 @@ interface Toast {
   type: "success" | "error";
 }
 
-export default function UserDashboard() {
+export default function ClubDashboard() {
   const params = useParams();
   const router = useRouter();
-  const username = params.username as string;
-  const [user, setUser] = useState<User | null>(null);
+  const clubname = params.clubname as string;
+  const [club, setClub] = useState<Club | null>(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState<User | null>(null);
+  const [formData, setFormData] = useState<Club | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
-    // Get user data from localStorage
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
-      setFormData(parsedUser); // Initialize form data
+    // Get club data from localStorage
+    const clubData = localStorage.getItem("club");
+    const userType = localStorage.getItem("userType");
 
-      // Verify that the username in URL matches logged-in user
-      // Convert name to URL format (lowercase, replace spaces with nothing or underscore)
-      const urlUsername = parsedUser.name.toLowerCase().replace(/\s+/g, "");
-      if (urlUsername !== username.toLowerCase()) {
-        // Redirect to correct username URL
-        router.push(`/user/${urlUsername}`);
+    if (clubData && userType === "club") {
+      const parsedClub = JSON.parse(clubData);
+      setClub(parsedClub);
+      setFormData(parsedClub);
+
+      // Verify that the clubname in URL matches logged-in club
+      const urlClubname = parsedClub.club_name
+        .toLowerCase()
+        .replace(/\s+/g, "");
+      if (urlClubname !== clubname.toLowerCase()) {
+        router.push(`/club/${urlClubname}`);
       }
     } else {
-      // Not logged in, redirect to login
-      router.push("/login");
+      // Not logged in as club, redirect to club login
+      router.push("/club/login");
     }
     setLoading(false);
-  }, [username, router]);
+  }, [clubname, router]);
 
   const showToast = (message: string, type: "success" | "error") => {
     const id = Date.now();
     setToasts((prev) => [...prev, { id, message, type }]);
 
-    // Auto remove toast after 3 seconds
     setTimeout(() => {
       setToasts((prev) => prev.filter((toast) => toast.id !== id));
-    }, 3000);
+    }, 4000);
   };
 
   const removeToast = (id: number) => {
@@ -95,7 +101,7 @@ export default function UserDashboard() {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setFormData(user); // Reset form data
+    setFormData(club);
   };
 
   const handleInputChange = (
@@ -111,21 +117,16 @@ export default function UserDashboard() {
     setIsSaving(true);
 
     try {
-      // Get auth token from localStorage
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("clubToken");
 
       if (!token) {
-        showToast(
-          "Authentication token not found. Please log in again.",
-          "error"
-        );
-        router.push("/login");
+        showToast("Authentication token not found. Please log in again.", "error");
+        router.push("/club/login");
         return;
       }
 
-      // Make API call to update user in database
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}api/users/${formData.id}`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/clubs/${formData.id}`,
         {
           method: "PUT",
           headers: {
@@ -133,12 +134,14 @@ export default function UserDashboard() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            name: formData.name,
+            clubName: formData.club_name,
             phone: formData.phone,
-            address: formData.address,
             university: formData.university,
-            department: formData.department,
-            bio: formData.bio || "",
+            description: formData.description,
+            presidentName: formData.president_name,
+            presidentEmail: formData.president_email,
+            website: formData.website || "",
+            address: formData.address || "",
           }),
         }
       );
@@ -149,45 +152,40 @@ export default function UserDashboard() {
         throw new Error(result.message || "Failed to update profile");
       }
 
-      // Update localStorage with the updated user data from server
-      const updatedUserData = {
+      const updatedClubData = {
         ...formData,
         ...result.data,
       };
-      localStorage.setItem("user", JSON.stringify(updatedUserData));
-      setUser(updatedUserData);
+      localStorage.setItem("club", JSON.stringify(updatedClubData));
+      setClub(updatedClubData);
 
       setIsSaving(false);
       setIsModalOpen(false);
 
-      // Show success message
       showToast("Profile updated successfully!", "success");
 
-      // If name changed, redirect to new username URL
-      const newUrlUsername = updatedUserData.name
+      // If name changed, redirect to new clubname URL
+      const newUrlClubname = updatedClubData.club_name
         .toLowerCase()
         .replace(/\s+/g, "");
-      if (newUrlUsername !== username.toLowerCase()) {
-        router.push(`/user/${newUrlUsername}`);
+      if (newUrlClubname !== clubname.toLowerCase()) {
+        router.push(`/club/${newUrlClubname}`);
       }
     } catch (error: any) {
       console.error("Failed to update profile:", error);
-      showToast(
-        error.message || "Failed to update profile. Please try again.",
-        "error"
-      );
+      showToast(error.message || "Failed to update profile. Please try again.", "error");
       setIsSaving(false);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
+    localStorage.removeItem("club");
+    localStorage.removeItem("clubToken");
     localStorage.removeItem("userType");
-    router.push("/login");
+    router.push("/club/login");
   };
 
-  if (loading || !user) {
+  if (loading || !club) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -197,36 +195,36 @@ export default function UserDashboard() {
 
   const stats = [
     {
-      icon: HiOutlineTicket,
-      label: "Registered Events",
-      value: "12",
+      icon: HiOutlineCalendar,
+      label: "Total Events",
+      value: "24",
       color: "bg-blue-500",
     },
     {
-      icon: HiOutlineCalendar,
-      label: "Upcoming Events",
-      value: "5",
+      icon: HiOutlineUsers,
+      label: "Active Members",
+      value: "156",
       color: "bg-green-500",
     },
     {
-      icon: HiOutlineStar,
-      label: "Favorite Events",
-      value: "8",
+      icon: HiOutlineTicket,
+      label: "Event Registrations",
+      value: "842",
       color: "bg-yellow-500",
     },
     {
-      icon: HiOutlineTicket,
-      label: "Past Events",
-      value: "7",
+      icon: HiOutlineChartBar,
+      label: "Engagement Rate",
+      value: "87%",
       color: "bg-purple-500",
     },
   ];
 
   const tabs = [
     { id: "overview", label: "Overview", icon: HiOutlineHome },
-    { id: "events", label: "My Events", icon: HiOutlineCalendar },
-    { id: "favorites", label: "Favorites", icon: HiOutlineStar },
-    { id: "tickets", label: "My Tickets", icon: HiOutlineTicket },
+    { id: "events", label: "Events", icon: HiOutlineCalendar },
+    { id: "members", label: "Members", icon: HiOutlineUsers },
+    { id: "analytics", label: "Analytics", icon: HiOutlineChartBar },
     { id: "profile", label: "Profile", icon: HiOutlineCog },
   ];
 
@@ -234,7 +232,7 @@ export default function UserDashboard() {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Left Sidebar */}
       <DashboardSidebar
-        type="user"
+        type="club"
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onLogout={handleLogout}
@@ -243,17 +241,16 @@ export default function UserDashboard() {
       {/* Main Content Area */}
       <div className="flex-1 lg:ml-64 transition-all duration-300">
         {/* Content Area */}
-        <div className="container mx-auto px-4 py-8 lg:py-8 pt-20 lg:pt-8 max-w-7xl">
-        {/* Overview Tab */}
+        <div className="container mx-auto px-4 py-8 lg:py-8 pt-20 lg:pt-8 max-w-7xl">{/* Overview Tab */}
         {activeTab === "overview" && (
           <div className="space-y-8 animate-in fade-in duration-300">
             {/* Welcome Header */}
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-                Welcome back, {user.name}!
+                Welcome, {club.club_name}!
               </h1>
               <p className="text-gray-600 mt-2">
-                Here's what's happening with your events today.
+                Manage your club events and members from your dashboard
               </p>
             </div>
 
@@ -296,7 +293,7 @@ export default function UserDashboard() {
                       <HiOutlineCalendar className="w-16 h-16 mx-auto mb-4 opacity-50" />
                       <p className="text-sm">No upcoming events</p>
                       <p className="text-xs mt-2">
-                        Browse events to register for activities
+                        Create an event to get started
                       </p>
                     </div>
                   </div>
@@ -310,26 +307,26 @@ export default function UserDashboard() {
                     Quick Actions
                   </h3>
                   <div className="space-y-3">
-                    <Link
-                      href="/events"
+                    <button
+                      onClick={() => setActiveTab("events")}
                       className="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent transition-colors text-left flex items-center gap-3"
                     >
                       <HiOutlineCalendar className="w-5 h-5" />
-                      Browse Events
-                    </Link>
-                    <button
-                      onClick={() => setActiveTab("favorites")}
-                      className="w-full bg-gray-100 text-gray-700 px-4 py-3 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors text-left flex items-center gap-3"
-                    >
-                      <HiOutlineStar className="w-5 h-5" />
-                      View Favorites
+                      Create Event
                     </button>
                     <button
-                      onClick={() => setActiveTab("tickets")}
+                      onClick={() => setActiveTab("members")}
                       className="w-full bg-gray-100 text-gray-700 px-4 py-3 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors text-left flex items-center gap-3"
                     >
-                      <HiOutlineTicket className="w-5 h-5" />
-                      My Registrations
+                      <HiOutlineUsers className="w-5 h-5" />
+                      Manage Members
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("analytics")}
+                      className="w-full bg-gray-100 text-gray-700 px-4 py-3 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors text-left flex items-center gap-3"
+                    >
+                      <HiOutlineChartBar className="w-5 h-5" />
+                      View Analytics
                     </button>
                   </div>
                 </div>
@@ -348,64 +345,64 @@ export default function UserDashboard() {
           </div>
         )}
 
-        {/* My Events Tab */}
+        {/* Events Tab */}
         {activeTab === "events" && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">My Events</h2>
-              <Link
-                href="/events"
-                className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-accent transition-colors"
-              >
-                Browse Events
-              </Link>
+              <h2 className="text-2xl font-bold text-gray-900">Events</h2>
+              <button className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-accent transition-colors">
+                Create New Event
+              </button>
             </div>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12">
               <div className="text-center text-gray-400">
                 <HiOutlineCalendar className="w-20 h-20 mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                  No Registered Events
+                  No Events Yet
                 </h3>
                 <p className="text-sm">
-                  Start exploring and register for events you're interested in
+                  Create your first event to get started
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Favorites Tab */}
-        {activeTab === "favorites" && (
+        {/* Members Tab */}
+        {activeTab === "members" && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Favorite Events
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Members</h2>
+              <button className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-accent transition-colors">
+                Add Member
+              </button>
+            </div>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12">
               <div className="text-center text-gray-400">
-                <HiOutlineStar className="w-20 h-20 mx-auto mb-4 opacity-50" />
+                <HiOutlineUsers className="w-20 h-20 mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                  No Favorites Yet
+                  No Members Yet
                 </h3>
                 <p className="text-sm">
-                  Save events you like to access them quickly later
+                  Start adding members to your club
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* My Tickets Tab */}
-        {activeTab === "tickets" && (
+        {/* Analytics Tab */}
+        {activeTab === "analytics" && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            <h2 className="text-2xl font-bold text-gray-900">My Tickets</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12">
               <div className="text-center text-gray-400">
-                <HiOutlineTicket className="w-20 h-20 mx-auto mb-4 opacity-50" />
+                <HiOutlineChartBar className="w-20 h-20 mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                  No Tickets
+                  No Analytics Data
                 </h3>
                 <p className="text-sm">
-                  Your event tickets will appear here after registration
+                  Analytics will appear once you have events and members
                 </p>
               </div>
             </div>
@@ -415,88 +412,122 @@ export default function UserDashboard() {
         {/* Profile Tab */}
         {activeTab === "profile" && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            <h2 className="text-2xl font-bold text-gray-900">User Profile</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Club Profile</h2>
 
-            {/* User Profile Card */}
+            {/* Club Profile Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                {/* Avatar */}
-                <div className="relative">
-                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-4xl md:text-5xl font-bold">
-                    {user.name?.charAt(0).toUpperCase() || "U"}
-                  </div>
-                  <button className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                    <HiOutlinePencil className="w-4 h-4 text-gray-600" />
-                  </button>
-                </div>
+            {/* Logo */}
+            <div className="relative">
+              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-4xl md:text-5xl font-bold">
+                {club.club_name?.charAt(0).toUpperCase() || "C"}
+              </div>
+              <button className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                <HiOutlinePencil className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
 
-                {/* User Info */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">
-                        {user.name}
-                      </h2>
-                      <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full mt-2">
-                        {user.role?.charAt(0).toUpperCase() +
-                          user.role?.slice(1) || "Student"}
-                      </span>
-                    </div>
-                    <button
-                      onClick={handleEditClick}
-                      className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-accent transition-colors"
+            {/* Club Info */}
+            <div className="flex-1">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {club.club_name}
+                  </h2>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span
+                      className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${
+                        club.is_verified
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
                     >
-                      Edit Profile
-                    </button>
+                      {club.is_verified ? "✓ Verified" : "Pending Verification"}
+                    </span>
                   </div>
+                </div>
+                <button
+                  onClick={handleEditClick}
+                  className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-accent transition-colors"
+                >
+                  Edit Profile
+                </button>
+              </div>
 
-                  {/* Contact Information */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3 text-gray-600">
-                      <HiOutlineMail className="w-5 h-5 text-primary" />
-                      <span className="text-sm">{user.email}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-gray-600">
-                      <HiOutlinePhone className="w-5 h-5 text-primary" />
-                      <span className="text-sm">{user.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-gray-600">
-                      <HiOutlineAcademicCap className="w-5 h-5 text-primary" />
-                      <span className="text-sm">
-                        {user.department}, {user.university}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 text-gray-600">
-                      <HiOutlineLocationMarker className="w-5 h-5 text-primary" />
-                      <span className="text-sm">{user.address}</span>
-                    </div>
+              {/* Contact Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 text-gray-600">
+                  <HiOutlineMail className="w-5 h-5 text-primary" />
+                  <span className="text-sm">{club.email}</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-600">
+                  <HiOutlinePhone className="w-5 h-5 text-primary" />
+                  <span className="text-sm">{club.phone}</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-600">
+                  <HiOutlineAcademicCap className="w-5 h-5 text-primary" />
+                  <span className="text-sm">{club.university}</span>
+                </div>
+                {club.website && (
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <HiOutlineGlobe className="w-5 h-5 text-primary" />
+                    <a
+                      href={club.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm hover:text-primary transition-colors"
+                    >
+                      {club.website}
+                    </a>
                   </div>
+                )}
+                {club.address && (
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <HiOutlineLocationMarker className="w-5 h-5 text-primary" />
+                    <span className="text-sm">{club.address}</span>
+                  </div>
+                )}
+              </div>
 
-                  {/* Bio */}
-                  {user.bio && (
-                    <div className="mt-4 pt-4 border-t border-gray-100">
-                      <p className="text-gray-600 text-sm">{user.bio}</p>
-                    </div>
-                  )}
+              {/* Description */}
+              {club.description && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-gray-600 text-sm">{club.description}</p>
+                </div>
+              )}
+
+              {/* President Info */}
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Club President
+                </h3>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <HiOutlineUserGroup className="w-4 h-4 text-primary" />
+                    <span className="text-sm">{club.president_name}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <HiOutlineMail className="w-4 h-4 text-primary" />
+                    <span className="text-sm">{club.president_email}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+          </div>
         )}
 
-        {/* Edit Profile Modal */}
+      {/* Edit Profile Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 z-50 overflow-y-auto">
-            {/* Backdrop with blur */}
             <div
-              className="fixed inset-0 bg-opacity-50 backdrop-blur-sm transition-opacity"
+              className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity"
               onClick={handleCloseModal}
             ></div>
 
-            {/* Modal */}
             <div className="flex items-center justify-center min-h-screen p-4">
               <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 md:p-8 animate-in fade-in zoom-in duration-200">
-                {/* Close Button */}
                 <button
                   onClick={handleCloseModal}
                   className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
@@ -505,17 +536,15 @@ export default function UserDashboard() {
                   <HiX className="w-6 h-6" />
                 </button>
 
-                {/* Modal Header */}
                 <div className="mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">
-                    Edit Profile
+                    Edit Club Profile
                   </h2>
                   <p className="text-gray-600 text-sm mt-1">
-                    Update your personal information
+                    Update your club information
                   </p>
                 </div>
 
-                {/* Form */}
                 {formData && (
                   <form
                     onSubmit={(e) => {
@@ -524,19 +553,14 @@ export default function UserDashboard() {
                     }}
                     className="space-y-4"
                   >
-                    {/* Name */}
                     <div>
-                      <label
-                        htmlFor="name"
-                        className="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Full Name
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Club Name
                       </label>
                       <input
                         type="text"
-                        id="name"
-                        name="name"
-                        value={formData.name}
+                        name="club_name"
+                        value={formData.club_name}
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                         required
@@ -544,37 +568,12 @@ export default function UserDashboard() {
                       />
                     </div>
 
-                    {/* Email */}
                     <div>
-                      <label
-                        htmlFor="email"
-                        className="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                        required
-                        disabled={isSaving}
-                      />
-                    </div>
-
-                    {/* Phone */}
-                    <div>
-                      <label
-                        htmlFor="phone"
-                        className="block text-sm font-medium text-gray-700 mb-1"
-                      >
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Phone Number
                       </label>
                       <input
                         type="tel"
-                        id="phone"
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
@@ -584,19 +583,14 @@ export default function UserDashboard() {
                       />
                     </div>
 
-                    {/* Address */}
                     <div>
-                      <label
-                        htmlFor="address"
-                        className="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Address
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        University
                       </label>
                       <input
                         type="text"
-                        id="address"
-                        name="address"
-                        value={formData.address}
+                        name="university"
+                        value={formData.university}
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                         required
@@ -604,70 +598,88 @@ export default function UserDashboard() {
                       />
                     </div>
 
-                    {/* University and Department */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label
-                          htmlFor="university"
-                          className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                          University
-                        </label>
-                        <input
-                          type="text"
-                          id="university"
-                          name="university"
-                          value={formData.university}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                          required
-                          disabled={isSaving}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="department"
-                          className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                          Department
-                        </label>
-                        <input
-                          type="text"
-                          id="department"
-                          name="department"
-                          value={formData.department}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                          required
-                          disabled={isSaving}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Bio */}
                     <div>
-                      <label
-                        htmlFor="bio"
-                        className="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Bio{" "}
-                        <span className="text-gray-400 font-normal">
-                          (Optional)
-                        </span>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Description
                       </label>
                       <textarea
-                        id="bio"
-                        name="bio"
-                        value={formData.bio || ""}
+                        name="description"
+                        value={formData.description}
                         onChange={handleInputChange}
                         rows={3}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none"
-                        placeholder="Tell us about yourself..."
+                        required
                         disabled={isSaving}
                       />
                     </div>
 
-                    {/* Action Buttons */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          President Name
+                        </label>
+                        <input
+                          type="text"
+                          name="president_name"
+                          value={formData.president_name}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                          required
+                          disabled={isSaving}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          President Email
+                        </label>
+                        <input
+                          type="email"
+                          name="president_email"
+                          value={formData.president_email}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                          required
+                          disabled={isSaving}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Website{" "}
+                        <span className="text-gray-400 font-normal">
+                          (Optional)
+                        </span>
+                      </label>
+                      <input
+                        type="url"
+                        name="website"
+                        value={formData.website || ""}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                        placeholder="https://example.com"
+                        disabled={isSaving}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Address{" "}
+                        <span className="text-gray-400 font-normal">
+                          (Optional)
+                        </span>
+                      </label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address || ""}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                        placeholder="Club office location"
+                        disabled={isSaving}
+                      />
+                    </div>
+
                     <div className="flex gap-3 pt-4">
                       <button
                         type="button"

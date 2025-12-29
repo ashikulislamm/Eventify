@@ -61,6 +61,10 @@ export default function LoginPage() {
         // Store user data in localStorage
         const userData = response.data.data;
         localStorage.setItem("user", JSON.stringify(userData));
+        localStorage.setItem("userType", "user");
+
+        // Dispatch custom event to notify Header component
+        window.dispatchEvent(new Event("userLogin"));
 
         // Create username for URL (lowercase, no spaces)
         const urlUsername = userData.name.toLowerCase().replace(/\s+/g, "");

@@ -6,6 +6,9 @@ const router = Router();
 // Student Login
 router.post("/login", authController.login);
 
+// Club Login
+router.post("/club/login", authController.clubLogin);
+
 // Change Password
 router.post("/change-password/:userId", authController.changePassword);
 

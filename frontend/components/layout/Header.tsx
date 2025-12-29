@@ -16,59 +16,95 @@ const navLinks = [
 export default function Header() {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [userType, setUserType] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+    // Check if user or club is logged in
+    const storedUserType = localStorage.getItem("userType");
+    setUserType(storedUserType);
+
+    if (storedUserType === "user") {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        setUser(JSON.parse(userData));
+      }
+    } else if (storedUserType === "club") {
+      const clubData = localStorage.getItem("club");
+      if (clubData) {
+        setUser(JSON.parse(clubData));
+      }
+    }
+
+    // Listen for login event
+    const handleUserLogin = () => {
+      const storedUserType = localStorage.getItem("userType");
+      setUserType(storedUserType);
+
+      if (storedUserType === "user") {
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          setUser(JSON.parse(userData));
+        }
+      } else if (storedUserType === "club") {
+        const clubData = localStorage.getItem("club");
+        if (clubData) {
+          setUser(JSON.parse(clubData));
+        }
+      }
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    window.addEventListener("userLogin", handleUserLogin);
 
-  useEffect(() => {
-    // Check if user is logged in
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
+    return () => {
+      window.removeEventListener("userLogin", handleUserLogin);
+    };
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    if (userType === "user") {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+    } else if (userType === "club") {
+      localStorage.removeItem("club");
+      localStorage.removeItem("clubToken");
+    }
+    localStorage.removeItem("userType");
     setUser(null);
+    setUserType(null);
     setIsUserMenuOpen(false);
     router.push("/");
   };
 
+  const getDashboardLink = () => {
+    if (userType === "user" && user) {
+      return `/user/${user.name.toLowerCase().replace(/\s+/g, "")}`;
+    } else if (userType === "club" && user) {
+      return `/club/${user.club_name.toLowerCase().replace(/\s+/g, "")}`;
+    }
+    return "/";
+  };
+
+  const getDisplayName = () => {
+    if (userType === "user" && user) {
+      return user.name;
+    } else if (userType === "club" && user) {
+      return user.club_name;
+    }
+    return "";
+  };
+
   return (
-    <div
-      className={`sticky top-0 z-50 mx-auto transition-all duration-500 ${
-        isScrolled ? "pt-2" : "pt-0"
-      }`}
-    >
-      <header
-        className={`bg-white text-secondary py-3 md:py-4 px-4 md:px-6 shadow-md transition-all duration-1000 ${
-          isScrolled
-            ? "max-w-[1300px] mx-auto rounded-full"
-            : "max-w-full rounded-none"
-        }`}
-      >
+    <div className="sticky top-0 z-50 mx-auto">
+      <header className="bg-white text-secondary py-3 md:py-4 px-4 md:px-6 shadow-md">
         <div className="container mx-auto flex items-center justify-between lg:relative">
           {/* Logo - Left on Mobile, Center on Desktop */}
           <div className="lg:absolute lg:left-1/2 lg:transform lg:-translate-x-1/2 ">
             <Link href="/" className="flex items-center">
-              <Image
-                src={Logo}
-                alt="Eventify Logo"
-                width={isScrolled ? 100 : 120}
-                height={isScrolled ? 60 : 80}
-                className="transition-all duration-500 p-2"
-                priority
-              />
+              <h1 className="text-2xl font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                EVENTIFY
+              </h1>
             </Link>
           </div>
 
@@ -109,7 +145,7 @@ export default function Header() {
                   className="flex items-center gap-2 bg-primary text-white px-4 xl:px-6 py-2.5 rounded-lg text-xs xl:text-sm font-medium hover:opacity-90 transition-opacity"
                 >
                   <HiOutlineUser className="w-5 h-5" />
-                  <span className="whitespace-nowrap">{user.name}</span>
+                  <span className="whitespace-nowrap">{getDisplayName()}</span>
                   <HiChevronDown
                     className={`w-4 h-4 transition-transform ${
                       isUserMenuOpen ? "rotate-180" : ""
@@ -121,7 +157,7 @@ export default function Header() {
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-100">
                     <Link
-                      href={`/user/${user.name.toLowerCase().replace(/\s+/g, "")}`}
+                      href={getDashboardLink()}
                       className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
@@ -200,10 +236,10 @@ export default function Header() {
             ) : (
               <>
                 <div className="px-2 py-2 text-sm font-semibold text-gray-700 border-b border-gray-200">
-                  {user.name}
+                  {getDisplayName()}
                 </div>
                 <Link
-                  href={`/user/${user.name.toLowerCase().replace(/\s+/g, "")}`}
+                  href={getDashboardLink()}
                   className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors rounded-lg"
                   onClick={() => setIsMenuOpen(false)}
                 >

@@ -54,6 +54,57 @@ class AuthController {
     }
   }
 
+  // Club Login
+  async clubLogin(req: Request, res: Response): Promise<void> {
+    try {
+      const { email, password } = req.body;
+
+      // Validation
+      if (!email || !password) {
+        res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          message: "Email and password are required",
+        });
+        return;
+      }
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          message: "Invalid email format",
+        });
+        return;
+      }
+
+      // Authenticate club
+      const club = await authService.clubLogin({ email, password });
+
+      res.status(StatusCodes.OK).json({
+        success: true,
+        message: "Login successful",
+        data: club,
+      });
+    } catch (error: any) {
+      console.error("Club login error:", error);
+
+      if (error.message === "Invalid email or password") {
+        res.status(StatusCodes.UNAUTHORIZED).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: "Login failed. Please try again.",
+        error: error.message,
+      });
+    }
+  }
+
   // Change Password
   async changePassword(req: Request, res: Response): Promise<void> {
     try {

@@ -1,6 +1,7 @@
 import sql from "../config/db";
 import bcrypt from "bcrypt";
 import userService from "./user.service";
+import clubService from "./club.service";
 
 interface LoginCredentials {
   email: string;
@@ -70,6 +71,37 @@ class AuthService {
       ...userWithoutPassword
     } = user;
     return userWithoutPassword;
+  }
+
+  // Club Login
+  async clubLogin(credentials: LoginCredentials): Promise<any> {
+    const { email, password } = credentials;
+
+    // Get club by email (includes password)
+    const club = await clubService.getClubByEmail(email);
+
+    if (!club) {
+      throw new Error("Invalid email or password");
+    }
+
+    // Verify password
+    const isPasswordValid = await clubService.verifyPassword(
+      password,
+      (club as any).password
+    );
+
+    if (!isPasswordValid) {
+      throw new Error("Invalid email or password");
+    }
+
+    // Return club data without password
+    const {
+      password: _,
+      created_at,
+      updated_at,
+      ...clubWithoutPassword
+    } = club as any;
+    return clubWithoutPassword;
   }
 
   // Change Password

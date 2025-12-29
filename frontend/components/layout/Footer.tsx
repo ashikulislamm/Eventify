@@ -28,7 +28,7 @@ const socialLinks = [
 export default function Footer() {
   return (
     <footer className="w-full bg-white border-t border-gray-200 pt-16 pb-8">
-      <div className="max-w-[1200px] mx-auto px-4 md:px-10">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 mb-12">
           {/* Brand Section */}
           <div className="sm:col-span-2 lg:col-span-1">

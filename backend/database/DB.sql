@@ -83,6 +83,9 @@ CREATE TABLE events (
     image VARCHAR(500),
     status event_status DEFAULT 'DRAFT',
     tags TEXT[],
+    highlights TEXT[],
+    schedule JSONB,
+    requirements TEXT[],
     club_id UUID NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

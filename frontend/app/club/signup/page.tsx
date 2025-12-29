@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 import {
   HiOutlineMail,
   HiOutlineLockClosed,
@@ -12,6 +15,9 @@ import {
   HiOutlineLocationMarker,
   HiOutlineAcademicCap,
   HiOutlineIdentification,
+  HiCheckCircle,
+  HiExclamationCircle,
+  HiX,
 } from "react-icons/hi";
 import { FaGoogle, FaGithub } from "react-icons/fa";
 
@@ -28,7 +34,14 @@ const socialSignups = [
   },
 ];
 
+interface Toast {
+  id: number;
+  message: string;
+  type: "success" | "error";
+}
+
 export default function ClubSignUpPage() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     clubName: "",
@@ -44,12 +57,28 @@ export default function ClubSignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   const steps = [
     { number: 1, title: "Club Information" },
     { number: 2, title: "President Information" },
     { number: 3, title: "Security" },
   ];
+
+  const showToast = (message: string, type: "success" | "error") => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+
+    // Auto remove toast after 4 seconds
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, 4000);
+  };
+
+  const removeToast = (id: number) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  };
 
   const validateStep = (step: number) => {
     switch (step) {
@@ -79,7 +108,7 @@ export default function ClubSignUpPage() {
     if (validateStep(currentStep)) {
       setCurrentStep(currentStep + 1);
     } else {
-      alert("Please fill in all required fields");
+      showToast("Please fill in all required fields", "error");
     }
   };
 
@@ -87,18 +116,65 @@ export default function ClubSignUpPage() {
     setCurrentStep(currentStep - 1);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      showToast("Passwords do not match!", "error");
       return;
     }
     if (!agreeToTerms) {
-      alert("Please agree to the terms and conditions");
+      showToast("Please agree to the terms and conditions", "error");
       return;
     }
-    console.log("Club signup attempt:", formData);
-    // Handle club signup logic
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/clubs/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to register club");
+      }
+
+      showToast("Club registered successfully! Redirecting to login...", "success");
+
+      // Reset form
+      setFormData({
+        clubName: "",
+        email: "",
+        phone: "",
+        university: "",
+        description: "",
+        presidentName: "",
+        presidentEmail: "",
+        password: "",
+        confirmPassword: "",
+      });
+      setAgreeToTerms(false);
+      setCurrentStep(1);
+
+      // Redirect to club login page after 2 seconds
+      setTimeout(() => {
+        router.push("/club/login");
+      }, 2000);
+    } catch (error: any) {
+      console.error("Club registration error:", error);
+      showToast(error.message || "Failed to register club. Please try again.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (
@@ -111,9 +187,11 @@ export default function ClubSignUpPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Form */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-white py-12">
+    <>
+      <Header />
+      <div className="min-h-screen flex">
+        {/* Left Side - Form */}
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-white py-12">
         <div className="w-full max-w-md space-y-6">
           {/* Logo/Brand */}
           <div className="text-center">
@@ -530,9 +608,36 @@ export default function ClubSignUpPage() {
                 ) : (
                   <button
                     type="submit"
-                    className="flex-1 bg-accent text-white py-3.5 rounded-xl font-bold hover:bg-primary transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    disabled={isSubmitting}
+                    className="flex-1 bg-accent text-white py-3.5 rounded-xl font-bold hover:bg-primary transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Register Club
+                    {isSubmitting ? (
+                      <>
+                        <svg
+                          className="animate-spin h-5 w-5 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        <span>Registering...</span>
+                      </>
+                    ) : (
+                      "Register Club"
+                    )}
                   </button>
                 )}
               </div>
@@ -629,6 +734,35 @@ export default function ClubSignUpPage() {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Toast Notifications */}
+      <div className="fixed top-4 right-4 z-[60] space-y-3">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`flex items-center gap-3 min-w-[320px] max-w-md px-4 py-3 rounded-lg shadow-lg backdrop-blur-sm transform transition-all duration-300 animate-in slide-in-from-right ${
+              toast.type === "success"
+                ? "bg-green-500/95 text-white"
+                : "bg-red-500/95 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <HiCheckCircle className="w-6 h-6 flex-shrink-0" />
+            ) : (
+              <HiExclamationCircle className="w-6 h-6 flex-shrink-0" />
+            )}
+            <p className="flex-1 text-sm font-medium">{toast.message}</p>
+            <button
+              onClick={() => removeToast(toast.id)}
+              className="flex-shrink-0 hover:bg-white/20 rounded p-1 transition-colors"
+            >
+              <HiX className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
+      </div>
+      </div>
+      <Footer />
+    </>
   );
 }
