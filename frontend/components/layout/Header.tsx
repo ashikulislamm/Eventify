@@ -90,7 +90,8 @@ export default function Header() {
     if (userType === "user" && user) {
       return user.name;
     } else if (userType === "club" && user) {
-      return user.club_name;
+      // Show nickname if it exists, otherwise show full club name
+      return user.nickname || user.club_name;
     }
     return "";
   };

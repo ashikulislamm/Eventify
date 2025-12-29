@@ -55,7 +55,7 @@ export default function DashboardSidebar({
     if (type === "user" && profileData) {
       return profileData.name;
     } else if (type === "club" && profileData) {
-      return profileData.club_name;
+      return profileData.nickname || profileData.club_name;
     }
     return "";
   };
@@ -89,6 +89,11 @@ export default function DashboardSidebar({
       icon: HiOutlineTicket,
     },
     {
+      id: "profile",
+      label: "Profile Settings",
+      icon: HiOutlineCog,
+    },
+    {
       id: "homepage",
       label: "Back to Homepage",
       icon: HiHome,
@@ -115,6 +120,11 @@ export default function DashboardSidebar({
       id: "analytics",
       label: "Attendees",
       icon: HiOutlineUserGroup,
+    },
+    {
+      id: "profile",
+      label: "Profile Settings",
+      icon: HiOutlineCog,
     },
     {
       id: "homepage",
@@ -167,7 +177,7 @@ export default function DashboardSidebar({
               </div>
               <div>
                 <h2 className="text-lg font-bold text-gray-800">Eventify</h2>
-                <p className="text-xs text-gray-500">Admin Console</p>
+                <p className="text-xs text-gray-500">Dashboard</p>
               </div>
             </Link>
           )}
@@ -192,7 +202,38 @@ export default function DashboardSidebar({
             <HiX className="w-4 h-4" />
           )}
         </button>
+        <div className="pt-2 pl-2">
+          {/* Profile Info */}
+          {!isCollapsed && (
+            <div className="mb-4 px-2">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-gray-600 text-sm font-semibold">
+                    {getDisplayName().charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-gray-800 truncate">
+                    {getDisplayName()}
+                  </h3>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 truncate pl-[46px]">
+                {getEmail()}
+              </p>
+            </div>
+          )}
 
+          {isCollapsed && (
+            <div className="mb-4 flex justify-center">
+              <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                <span className="text-gray-600 text-sm font-semibold">
+                  {getDisplayName().charAt(0).toUpperCase()}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
         {/* Navigation Menu */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
@@ -243,37 +284,6 @@ export default function DashboardSidebar({
 
         {/* Profile & Logout */}
         <div className="p-4 border-t border-gray-200">
-          {/* Profile Info */}
-          {!isCollapsed && (
-            <div className="mb-4 px-2">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-gray-600 text-sm font-semibold">
-                    {getDisplayName().charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-gray-800 truncate">
-                    {getDisplayName()}
-                  </h3>
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 truncate pl-[46px]">
-                {getEmail()}
-              </p>
-            </div>
-          )}
-
-          {isCollapsed && (
-            <div className="mb-4 flex justify-center">
-              <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-gray-600 text-sm font-semibold">
-                  {getDisplayName().charAt(0).toUpperCase()}
-                </span>
-              </div>
-            </div>
-          )}
-
           {/* Logout Button */}
           <button
             onClick={onLogout}

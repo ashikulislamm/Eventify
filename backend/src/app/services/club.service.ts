@@ -15,6 +15,7 @@ interface CreateClubData {
 interface Club {
   id: string;
   club_name: string;
+  nickname?: string;
   email: string;
   phone: string;
   university: string;
@@ -60,7 +61,7 @@ class ClubService {
     const newClub = await sql<Club[]>`
       INSERT INTO clubs (club_name, email, phone, university, description, president_name, president_email, password)
       VALUES (${clubName}, ${email}, ${phone}, ${university}, ${description}, ${presidentName}, ${presidentEmail}, ${hashedPassword})
-      RETURNING id, club_name, email, phone, university, description, president_name, president_email, logo, website, address, is_verified, created_at, updated_at
+      RETURNING id, club_name, nickname, email, phone, university, description, president_name, president_email, logo, website, address, is_verified, created_at, updated_at
     `;
 
     return newClub[0];
@@ -69,7 +70,7 @@ class ClubService {
   // Get club by ID
   async getClubById(id: string): Promise<Omit<Club, "password"> | null> {
     const club = await sql<Club[]>`
-      SELECT id, club_name, email, phone, university, description, president_name, president_email, logo, website, address, is_verified, created_at, updated_at
+      SELECT id, club_name, nickname, email, phone, university, description, president_name, president_email, logo, website, address, is_verified, created_at, updated_at
       FROM clubs
       WHERE id = ${id}
     `;
@@ -89,7 +90,7 @@ class ClubService {
   // Get all clubs (with pagination)
   async getAllClubs(limit: number = 10, offset: number = 0) {
     const clubs = await sql<Club[]>`
-      SELECT id, club_name, email, phone, university, description, president_name, president_email, logo, website, address, is_verified, created_at, updated_at
+      SELECT id, club_name, nickname, email, phone, university, description, president_name, president_email, logo, website, address, is_verified, created_at, updated_at
       FROM clubs
       ORDER BY created_at DESC
       LIMIT ${limit}
@@ -115,6 +116,7 @@ class ClubService {
   ): Promise<Omit<Club, "password"> | null> {
     const allowedFields = [
       "club_name",
+      "nickname",
       "phone",
       "university",
       "description",
@@ -145,7 +147,7 @@ class ClubService {
       UPDATE clubs 
       SET ${updates.join(", ")}, updated_at = CURRENT_TIMESTAMP
       WHERE id = $${values.length}
-      RETURNING id, club_name, email, phone, university, description, president_name, president_email, logo, website, address, is_verified, created_at, updated_at
+      RETURNING id, club_name, nickname, email, phone, university, description, president_name, president_email, logo, website, address, is_verified, created_at, updated_at
     `;
 
     const updatedClub = await sql.unsafe<Club[]>(query, values);
