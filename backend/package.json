@@ -22,6 +22,7 @@
     "express": "^5.1.0",
     "express-error-toolkit": "^1.2.1",
     "http-status-toolkit": "^2.0.0",
+    "jsonwebtoken": "^9.0.3",
     "postgres": "^3.4.7",
     "prisma": "^7.2.0"
   },
@@ -29,6 +30,7 @@
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.10.4",
     "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
